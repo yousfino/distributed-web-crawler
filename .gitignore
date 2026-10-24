@@ -23,3 +23,12 @@ Thumbs.db
 # Test & Coverage
 coverage/
 .nyc_output/
+
+# Gradle temporary/cache files
+.gradle/
+build/
+
+# IDE files
+.idea/
+*.iml
+.vscode/
