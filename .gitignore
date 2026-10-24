@@ -1,0 +1,25 @@
+# Dependencies & Build Outputs
+node_modules/
+dist/
+build/
+target/
+bin/
+*.class
+__pycache__/
+*.pyc
+
+# Environment & Secret configs
+.env
+.env.local
+*.log
+
+# IDE & OS files
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Test & Coverage
+coverage/
+.nyc_output/
