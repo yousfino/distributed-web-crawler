@@ -1,0 +1,9 @@
+server:
+  port: 8080
+
+crawler:
+  engine:
+    default-thread-pool-size: 8
+    max-depth: 3
+    request-timeout-ms: 5000
+    user-agent: "DistributedCrawlerBot/1.0 (+http://localhost:8080)"
