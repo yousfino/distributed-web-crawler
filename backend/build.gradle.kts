@@ -38,3 +38,5 @@ dependencies {
 tasks.withType<Test> {
     useJUnitPlatform()
 }
+
+layout.buildDirectory.set(file("C:/temp/distributed-web-crawler-build"))
