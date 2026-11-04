@@ -37,6 +37,14 @@ public class CrawlerController {
         return ResponseEntity.ok(Map.of("message", "Crawl stopped successfully"));
     }
 
+    @GetMapping(value = "/export", produces = "text/csv;charset=UTF-8")
+    public ResponseEntity<String> exportCsv() {
+        return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=\"crawl-report.csv\"")
+                .header("Cache-Control", "no-store")
+                .body(crawlerService.exportCsv());
+    }
+
     @GetMapping("/stats")
     public ResponseEntity<CrawlStatsDto> getStats(@RequestParam(defaultValue = "10") int topK) {
         return ResponseEntity.ok(crawlerService.getCrawlStats(topK));

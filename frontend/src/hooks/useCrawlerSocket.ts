@@ -11,7 +11,7 @@ export const useCrawlerSocket = (
 
   useEffect(() => {
     const client = new Client({
-      webSocketFactory: () => new SockJS("http://localhost:8080/ws/crawler"),
+      webSocketFactory: () => new SockJS("/ws/crawler"),
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,

@@ -45,3 +45,12 @@ Key Best Practices: Database migrations, indexing foreign keys, connection pooli
 - Java 17
 - Gradle (Kotlin DSL)
 - Spring Boot 3.x
+
+
+## Completion alerts and CSV reports
+
+- Enable **Notify me when crawling ends** before or during a crawl. Keep the page open. If browser notification permission is granted, a desktop alert appears once when the job ends; an in-app message is also shown. If notifications are unavailable or blocked, the in-app message still works. Manually stopped jobs are labeled “stopped.”
+- Choose **Export CSV** after at least one page is processed. During a crawl this downloads a snapshot; export again after completion for the final report. The report includes all stored pages for the current job, including pages outside the 50-entry live log. Starting a new crawl replaces the current job's results, so export before starting another job.
+- Reports use one row per page, sorted by URL, with consistent columns for job ID, URL, title, HTTP status, content type, word count, response time in milliseconds, discovered link count, headings, the page's top 10 keywords with counts, and crawl time in UTC. Word counts follow the crawler's existing token rules (terms of at least three characters). Failed HTTP responses are included when processed; network requests that fail before a response are not stored as pages.
+- CSV downloads use UTF-8 with a byte-order mark for spreadsheet compatibility, quoted fields, and escaped quotes/newlines. Text that could be interpreted as a spreadsheet formula is prefixed with an apostrophe. Filter by HTTP status to inspect errors, sort response times to find slow pages, and compare titles, headings, and keywords for content reporting.
+- API consumers can download the same report using `GET /api/crawler/export` (`text/csv; charset=UTF-8`).
