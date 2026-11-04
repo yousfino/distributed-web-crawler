@@ -3,7 +3,6 @@ package com.crawler.core.frontier;
 import com.crawler.core.model.CrawlTarget;
 import org.springframework.stereotype.Component;
 
-import java.net.URI;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,62 +15,42 @@ public class FrontierRegistry {
 
     private final BlockingQueue<CrawlTarget> queue = new LinkedBlockingQueue<>();
     private final Set<String> visitedUris = ConcurrentHashMap.newKeySet();
+    private final BloomFilter bloomFilter;
     private final AtomicInteger inFlightCount = new AtomicInteger(0);
 
+    public FrontierRegistry() {
+        // Capacity for 250,000 URLs with a 1% false positive rate (~298 KB in memory)
+        this.bloomFilter = new BloomFilter(250_000, 0.01);
+    }
+
+    public FrontierRegistry(int expectedCapacity, double fpp) {
+        this.bloomFilter = new BloomFilter(expectedCapacity, fpp);
+    }
+
     /**
-     * Enqueues a seed or newly discovered target if it has not yet been visited.
-     * @return true if added to frontier, false if already visited or duplicate.
+     * Enqueues a target if it hasn't been crawled yet.
+     * Uses BloomFilter as an initial fast rejection check before checking visitedUris.
      */
     public boolean offer(CrawlTarget target) {
-        if (target == null || target.getUri() == null) {
-            return false;
-        }
+        String normalizedKey = target.getUri().normalize().toString();
 
-        String normalizedKey = normalizeUri(target.getUri());
-
-        // Atomic check-and-add: O(1)
-        if (visitedUris.add(normalizedKey)) {
-            boolean enqueued = queue.offer(target);
-            if (!enqueued) {
-                // Roll back if queue refused the element
-                visitedUris.remove(normalizedKey);
-                return false;
-            }
+        // 1. If BloomFilter definitely says NO, it was never seen before
+        if (!bloomFilter.mightContain(normalizedKey)) {
+            bloomFilter.add(normalizedKey);
+            visitedUris.add(normalizedKey);
+            queue.offer(target);
             return true;
         }
+
+        // 2. If BloomFilter says MAYBE, fall back to exact Set to resolve potential false positives
+        if (visitedUris.add(normalizedKey)) {
+            queue.offer(target);
+            return true;
+        }
+
         return false;
     }
 
-    /**
-     * Normalizes URIs to prevent subtle duplicate crawls (case-insensitive host,
-     * stripping fragments, and standardizing path root).
-     */
-    private String normalizeUri(URI uri) {
-        try {
-            URI normalized = uri.normalize();
-            String scheme = normalized.getScheme() != null ? normalized.getScheme().toLowerCase() : "http";
-            String host = normalized.getHost() != null ? normalized.getHost().toLowerCase() : "";
-            int port = normalized.getPort();
-            String path = normalized.getPath();
-
-            if (path == null || path.isEmpty()) {
-                path = "/";
-            } else if (path.length() > 1 && path.endsWith("/")) {
-                path = path.substring(0, path.length() - 1);
-            }
-
-            String query = normalized.getQuery() != null ? "?" + normalized.getQuery() : "";
-            String portPart = (port != -1 && port != 80 && port != 443) ? ":" + port : "";
-
-            return scheme + "://" + host + portPart + path + query;
-        } catch (Exception e) {
-            return uri.normalize().toString();
-        }
-    }
-
-    /**
-     * Retrieves the next target, blocking up to the timeout duration.
-     */
     public CrawlTarget poll(long timeout, TimeUnit unit) throws InterruptedException {
         CrawlTarget target = queue.poll(timeout, unit);
         if (target != null) {
@@ -80,9 +59,6 @@ public class FrontierRegistry {
         return target;
     }
 
-    /**
-     * Marks a target crawl lifecycle as concluded (success or error).
-     */
     public void markCompleted(CrawlTarget target) {
         inFlightCount.decrementAndGet();
     }
@@ -103,9 +79,14 @@ public class FrontierRegistry {
         return inFlightCount.get();
     }
 
+    public BloomFilter getBloomFilter() {
+        return bloomFilter;
+    }
+
     public void clear() {
         queue.clear();
         visitedUris.clear();
+        bloomFilter.clear();
         inFlightCount.set(0);
     }
 }
