@@ -32,3 +32,5 @@ build/
 .idea/
 *.iml
 .vscode/
+
+start-project.txt
