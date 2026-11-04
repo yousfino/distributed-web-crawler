@@ -89,6 +89,40 @@ public class CrawlerService {
         messagingTemplate.convertAndSend("/topic/progress", event);
     }
 
+    public synchronized String exportCsv() {
+        StringBuilder csv = new StringBuilder("\uFEFF");
+        csv.append("Job ID,Page URL,Page Title,HTTP Status,Content Type,Word Count,Response Time (ms),Discovered Links,Headings,Top Keywords (count),Crawled At (UTC)\r\n");
+        storageStrategy.findAll().stream()
+                .sorted(Comparator.comparing(doc -> doc.getUri().toString()))
+                .forEach(doc -> {
+                    String keywords = doc.getKeywordFrequencies().entrySet().stream()
+                            .sorted(Map.Entry.<String, Integer>comparingByValue().reversed()
+                                    .thenComparing(Map.Entry.comparingByKey()))
+                            .limit(10)
+                            .map(entry -> entry.getKey() + " (" + entry.getValue() + ")")
+                            .collect(java.util.stream.Collectors.joining("; "));
+                    String[] cells = {currentJobId, doc.getUri().toString(), doc.getTitle(),
+                            Integer.toString(doc.getStatusCode()), doc.getContentType(),
+                            Integer.toString(doc.getWordCount()), Long.toString(doc.getResponseTimeMs()),
+                            Integer.toString(doc.getDiscoveredLinks().size()),
+                            String.join(" | ", doc.getHeadings()), keywords,
+                            doc.getCrawledAt() == null ? "" : doc.getCrawledAt().toString()};
+                    csv.append(Arrays.stream(cells).map(CrawlerService::csvCell)
+                            .collect(java.util.stream.Collectors.joining(","))).append("\r\n");
+                });
+        return csv.toString();
+    }
+
+    private static String csvCell(String value) {
+        if (value == null) value = "";
+        // Treat remote page content as text when opened in spreadsheet software.
+        String leading = value.stripLeading();
+        if ((!leading.isEmpty() && "=+@-".indexOf(leading.charAt(0)) >= 0) || value.startsWith("\t") || value.startsWith("\r") || value.startsWith("\n")) {
+            value = "'" + value;
+        }
+        return "\"" + value.replace("\"", "\"\"") + "\"";
+    }
+
     public CrawlStatsDto getCrawlStats(int topK) {
         return new CrawlStatsDto(
                 currentJobId,

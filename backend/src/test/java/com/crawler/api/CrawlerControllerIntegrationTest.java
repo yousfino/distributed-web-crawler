@@ -25,6 +25,16 @@ class CrawlerControllerIntegrationTest {
     private ObjectMapper objectMapper;
 
     @Test
+    void shouldDownloadCsvWithAttachmentHeaders() throws Exception {
+        mockMvc.perform(get("/api/crawler/export"))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .string("Content-Disposition", "attachment; filename=\"crawl-report.csv\""))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                        .contentType("text/csv;charset=UTF-8"));
+    }
+
+    @Test
     void shouldRejectInvalidSeedUrl() throws Exception {
         CrawlRequestDto dto = new CrawlRequestDto("not-a-valid-url");
 
