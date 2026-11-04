@@ -7,3 +7,17 @@ crawler:
     max-depth: 3
     request-timeout-ms: 5000
     user-agent: "DistributedCrawlerBot/1.0 (+http://localhost:8080)"
+
+spring:
+  datasource:
+    url: ${RESEARCH_DATABASE_URL:jdbc:h2:file:./data/research;DB_CLOSE_ON_EXIT=FALSE}
+    username: ${RESEARCH_DATABASE_USER:sa}
+    password: ${RESEARCH_DATABASE_PASSWORD:}
+  flyway:
+    enabled: true
+
+research:
+  openalex-url: https://api.openalex.org/works
+  crossref-url: https://api.crossref.org/works
+  openalex-api-key: ${OPENALEX_API_KEY:}
+  contact-email: ${RESEARCH_CONTACT_EMAIL:}

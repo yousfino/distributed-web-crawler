@@ -54,3 +54,8 @@ Key Best Practices: Database migrations, indexing foreign keys, connection pooli
 - Reports use one row per page, sorted by URL, with consistent columns for job ID, URL, title, HTTP status, content type, word count, response time in milliseconds, discovered link count, headings, the page's top 10 keywords with counts, and crawl time in UTC. Word counts follow the crawler's existing token rules (terms of at least three characters). Failed HTTP responses are included when processed; network requests that fail before a response are not stored as pages.
 - CSV downloads use UTF-8 with a byte-order mark for spreadsheet compatibility, quoted fields, and escaped quotes/newlines. Text that could be interpreted as a spreadsheet formula is prefixed with an apostrophe. Filter by HTTP status to inspect errors, sort response times to find slow pages, and compare titles, headings, and keywords for content reporting.
 - API consumers can download the same report using `GET /api/crawler/export` (`text/csv; charset=UTF-8`).
+
+
+## Academic research workspace
+
+The default Research Library supports project-based scholarly discovery, manual screening, persistent collections, and CSV/BibTeX reports. The existing crawler remains available in the Web Crawler tab. See [the research workflow and setup guide](docs/academic-research.md) for configuration, API routes, and current limitations.

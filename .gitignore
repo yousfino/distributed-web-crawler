@@ -34,3 +34,5 @@ build/
 .vscode/
 
 start-project.txt
+# Local research library database
+backend/data/
