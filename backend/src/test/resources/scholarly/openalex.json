@@ -1,0 +1,36 @@
+{
+  "results": [
+    {
+      "id": "https://openalex.org/W1",
+      "doi": "https://doi.org/10.1234/TEST",
+      "display_name": "Evidence, \"review\" & health",
+      "publication_year": 2023,
+      "type": "article",
+      "authorships": [
+        {
+          "author": {
+            "display_name": "Zoë Smith"
+          }
+        }
+      ],
+      "primary_location": {
+        "landing_page_url": "https://example.org/paper",
+        "source": {
+          "display_name": "Research Journal"
+        }
+      },
+      "open_access": {
+        "oa_url": "https://example.org/open.pdf"
+      },
+      "abstract_inverted_index": {
+        "Health": [
+          0
+        ],
+        "evidence": [
+          1,
+          2
+        ]
+      }
+    }
+  ]
+}

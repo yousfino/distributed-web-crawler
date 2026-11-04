@@ -1,0 +1,54 @@
+{
+  "message": {
+    "items": [
+      {
+        "DOI": "10.1234/test",
+        "title": [
+          "Evidence, \"review\" & health"
+        ],
+        "author": [
+          {
+            "given": "Zoë",
+            "family": "Smith"
+          }
+        ],
+        "published": {
+          "date-parts": [
+            [
+              2023,
+              3,
+              1
+            ]
+          ]
+        },
+        "type": "journal-article",
+        "container-title": [
+          "Research Journal"
+        ],
+        "URL": "https://doi.org/10.1234/test"
+      },
+      {
+        "DOI": "10.1234/second",
+        "title": [
+          "=Second {study}"
+        ],
+        "author": [
+          {
+            "given": "Ana",
+            "family": "Lee"
+          }
+        ],
+        "published": {
+          "date-parts": [
+            [
+              2022
+            ]
+          ]
+        },
+        "type": "journal-article",
+        "abstract": "<jats:p>Useful &amp; readable.</jats:p>",
+        "URL": "https://doi.org/10.1234/second"
+      }
+    ]
+  }
+}
