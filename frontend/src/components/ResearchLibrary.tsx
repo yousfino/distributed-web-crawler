@@ -77,7 +77,7 @@ export function ResearchLibrary() {
   const [fromYear, setFromYear] = useState('');
   const [toYear, setToYear] = useState('');
   const [publicationType, setPublicationType] = useState('');
-  const [sources, setSources] = useState(['openalex', 'crossref']);
+  const [sources, setSources] = useState(['openalex', 'crossref', 'pubmed']);
   const [filter, setFilter] = useState<Decision | ''>('');
   const [textFilter, setTextFilter] = useState('');
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -185,6 +185,7 @@ export function ResearchLibrary() {
         </section>
         <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
           <h2 className="mb-4 flex items-center gap-2 font-semibold"><Search size={18} className="text-teal-300" />Discover literature</h2>
+          <p className="mb-4 text-xs leading-relaxed text-slate-400">Google Scholar uses this application's own adapter, without a third-party search API. Access can be blocked; it is never guaranteed. <SafeLink url={`https://scholar.google.com/scholar?hl=en&q=${encodeURIComponent(query)}${fromYear ? `&as_ylo=${encodeURIComponent(fromYear)}` : ''}${toYear ? `&as_yhi=${encodeURIComponent(toYear)}` : ''}`}>Open Scholar manually</SafeLink></p>
           <form onSubmit={search} className="space-y-4">
             <div className="flex flex-col gap-3 sm:flex-row"><label className="flex-1"><span className="sr-only">Search terms</span><input className={input} required maxLength={500} value={query} onChange={e => setQuery(e.target.value)} placeholder="Search a topic, paper title, or DOI…" /></label><button className={primary} disabled={busy || !query.trim() || !sources.length}>{busy ? <LoaderCircle size={16} className="animate-spin" /> : <Search size={16} />}{busy ? 'Searching…' : 'Search papers'}</button></div>
             <div className="grid gap-3 sm:grid-cols-3">
@@ -192,10 +193,10 @@ export function ResearchLibrary() {
               <label className="text-xs text-slate-400">To year<input type="number" min="1600" max="2200" className={`${input} mt-1`} placeholder="Any year" value={toYear} onChange={e => setToYear(e.target.value)} /></label>
               <label className="text-xs text-slate-400">Publication type<select aria-label="Publication type" className={`${input} mt-1`} value={publicationType} onChange={e => setPublicationType(e.target.value)}><option value="">Any type</option><option value="article">Article</option><option value="preprint">Preprint</option><option value="book-chapter">Book chapter</option></select></label>
             </div>
-            <fieldset className="flex flex-wrap items-center gap-4 text-sm"><legend className="mb-2 text-xs text-slate-400">Scholarly sources</legend>{['openalex', 'crossref'].map(source => <label key={source} className="flex items-center gap-2"><input type="checkbox" checked={sources.includes(source)} onChange={e => setSources(previous => e.target.checked ? [...previous, source] : previous.filter(s => s !== source))} />{source === 'openalex' ? 'OpenAlex' : 'Crossref'}</label>)}</fieldset>
-            <p className="text-xs text-slate-500">Up to 25 records per source per search. Results are deduplicated; this is a discovery aid, not an exhaustive systematic search.</p>
+            <fieldset className="flex flex-wrap items-center gap-4 text-sm"><legend className="mb-2 text-xs text-slate-400">Scholarly sources</legend>{['openalex', 'crossref', 'pubmed', 'scholar'].map(source => <label key={source} className="flex items-center gap-2"><input type="checkbox" checked={sources.includes(source)} onChange={e => setSources(previous => e.target.checked ? [...previous, source] : previous.filter(s => s !== source))} />{{ openalex: 'OpenAlex', crossref: 'Crossref', pubmed: 'PubMed', scholar: 'Google Scholar (best effort)' }[source]}</label>)}</fieldset>
+            <p className="text-xs text-slate-500">Up to 25 records per API source; up to 10 for Google Scholar. Results are deduplicated; this is a discovery aid, not an exhaustive systematic search.</p>
           </form>
-          {busy && <p role="status" className="mt-4 text-sm text-teal-300">Retrieving source records. This may take up to 45 seconds.</p>}
+          {busy && <p role="status" className="mt-4 text-sm text-teal-300">Retrieving source records. This may take up to two minutes.</p>}
           {searchMessage && <p role="status" className="mt-4 text-sm text-teal-300">{searchMessage}</p>}
           {!!lastSearch?.warnings.length && <div role="alert" className="mt-4 rounded-lg border border-amber-800 bg-amber-950/40 p-3 text-sm text-amber-200"><p className="mb-1 font-semibold">Some sources could not be searched</p>{lastSearch.warnings.map(w => <p key={w}>{w}</p>)}<p className="mt-2 text-xs">Available results are saved. Retry the search after access is restored.</p></div>}
         </section>

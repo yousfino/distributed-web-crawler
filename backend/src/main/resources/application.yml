@@ -18,6 +18,8 @@ spring:
 
 research:
   openalex-url: https://api.openalex.org/works
+  scholar-url: https://scholar.google.com/scholar
+  pubmed-url: https://eutils.ncbi.nlm.nih.gov/entrez/eutils
   crossref-url: https://api.crossref.org/works
   openalex-api-key: ${OPENALEX_API_KEY:}
   contact-email: ${RESEARCH_CONTACT_EMAIL:}

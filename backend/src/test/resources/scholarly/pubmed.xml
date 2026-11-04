@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE PubmedArticleSet SYSTEM "https://dtd.nlm.nih.gov/ncbi/pubmed/out/pubmed_250101.dtd">
+<PubmedArticleSet>
+  <PubmedArticle>
+    <MedlineCitation><PMID>12345</PMID><Article>
+      <Journal><JournalIssue><PubDate><Year>2023</Year></PubDate></JournalIssue><Title>Research Journal</Title></Journal>
+      <ArticleTitle>Evidence, "review" &amp; <i>health</i></ArticleTitle>
+      <Abstract><AbstractText Label="BACKGROUND">Health evidence.</AbstractText><AbstractText Label="RESULTS">Useful findings.</AbstractText></Abstract>
+      <AuthorList><Author><LastName>Smith</LastName><ForeName>Zoë</ForeName></Author><Author><CollectiveName>Health Research Group</CollectiveName></Author></AuthorList>
+      <PublicationTypeList><PublicationType>Journal Article</PublicationType></PublicationTypeList>
+    </Article></MedlineCitation>
+    <PubmedData><ArticleIdList><ArticleId IdType="pubmed">12345</ArticleId><ArticleId IdType="doi">10.1234/TEST</ArticleId><ArticleId IdType="pmc">PMC12345</ArticleId></ArticleIdList></PubmedData>
+  </PubmedArticle>
+  <PubmedArticle>
+    <MedlineCitation><PMID>32100</PMID><Article>
+      <Journal><JournalIssue><PubDate><MedlineDate>2021 Nov-Dec</MedlineDate></PubDate></JournalIssue><Title>Preprint repository</Title></Journal>
+      <ArticleTitle>Preliminary evidence</ArticleTitle><PublicationTypeList><PublicationType>Preprint</PublicationType></PublicationTypeList>
+      <ELocationID EIdType="doi">10.1234/preprint</ELocationID>
+    </Article></MedlineCitation><PubmedData/>
+  </PubmedArticle>
+  <PubmedBookArticle><BookDocument><PMID>54321</PMID><ArticleTitle>Evidence methods</ArticleTitle>
+    <Book><BookTitle>Research Methods</BookTitle><PubDate><Year>2022</Year></PubDate></Book>
+    <AuthorList><Author><ForeName>Ana</ForeName><LastName>Lee</LastName></Author></AuthorList>
+    <Abstract><AbstractText>Chapter abstract.</AbstractText></Abstract>
+  </BookDocument><PubmedBookData><ArticleIdList><ArticleId IdType="doi">10.1234/chapter</ArticleId></ArticleIdList></PubmedBookData></PubmedBookArticle>
+</PubmedArticleSet>
