@@ -59,3 +59,11 @@ Key Best Practices: Database migrations, indexing foreign keys, connection pooli
 ## Academic research workspace
 
 The default Research Library supports project-based scholarly discovery, manual screening, persistent collections, and CSV/BibTeX reports. The existing crawler remains available in the Web Crawler tab. See [the research workflow and setup guide](docs/academic-research.md) for configuration, API routes, and current limitations.
+
+
+PubMed public API discovery and an opt-in direct Google Scholar adapter are now supported. Scholar access is best effort and cannot be guaranteed against blocking; the UI reports blocks and provides a manual search link. See the research guide for usage and limitations.
+
+
+## Research materials discovery
+
+The default Research Materials workspace finds explicitly linked datasets, code, supplements, protocols, and project pages from paper landing pages. It preserves discovery evidence, HTTP outcomes, manual verification, and CSV inventories. See [the workflow, limits, and ten-paper pilot](docs/research-materials.md).

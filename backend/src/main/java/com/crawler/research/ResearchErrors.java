@@ -6,7 +6,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.ResponseEntity;
 import java.util.Map;
 
-@RestControllerAdvice(assignableTypes=ResearchController.class)
+@RestControllerAdvice(assignableTypes={ResearchController.class,com.crawler.materials.MaterialsController.class})
 public class ResearchErrors {
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<Map<String,String>> status(ResponseStatusException e) {

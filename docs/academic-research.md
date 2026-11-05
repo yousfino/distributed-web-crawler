@@ -5,7 +5,7 @@ Research Atlas adds literature discovery and manual screening to the existing cr
 ## Research workflow
 
 1. Create a project with a name and research question.
-2. Search OpenAlex and/or Crossref using keywords, publication years, and publication type. Searches retrieve up to 25 records per source. Search again with different terms to grow the collection; results are not exhaustive and there is no automatic pagination in this release.
+2. Search OpenAlex, Crossref, and/or PubMed using keywords, publication years, and publication type. API searches retrieve up to 25 records per source. Google Scholar is an optional best-effort source with up to 10 records; see its limitations below. Search again with different terms to grow the collection; results are not exhaustive and there is no automatic pagination in this release.
 3. Expand a paper to read its available abstract, follow source/open-access links, and inspect provenance. A missing open-access link means availability is unknown; it does not establish that the paper is paywalled. Crossref publisher links and licenses alone are not treated as proof of open access.
 4. Mark papers Included, Excluded, or Undecided, add notes, and supply a reason for exclusions. Save each review before moving to another paper. Decisions are project-specific.
 5. Export all collected papers or only Included papers as CSV or BibTeX. Exports use the selected export scope, independently of the on-screen text and decision filters.
@@ -46,12 +46,37 @@ This release stores project documents in a SQL table with transactional row lock
 
 ## Scholarly service configuration
 
-Allow HTTPS access to `api.openalex.org` and `api.crossref.org` in the hosting environment. A saved network draft does not grant access until applied. API availability and provider requirements can change.
+Allow HTTPS access to `api.openalex.org`, `api.crossref.org`, `eutils.ncbi.nlm.nih.gov`, and (if selected) `scholar.google.com` in the hosting environment. A saved network draft does not grant access until applied. API availability and provider requirements can change. Domain settings alone cannot prevent upstream blocking.
 
 - `OPENALEX_API_KEY`: optional configured key, used when supplied. If OpenAlex returns an access error, configure an appropriate key in secure environment settings according to its current service requirements. Never enter keys in queries or source URLs.
 - `RESEARCH_CONTACT_EMAIL`: optional contact address used for scholarly API identification and Crossref's polite pool.
 
 No secret values are stored in project provenance or reports. Rate-limit/access failures are surfaced in search history; the UI does not fabricate substitute results. Live API validation was blocked by the managed environment's network policy during implementation. Adapter behavior was validated using recorded-shape local fixtures; enabling domains is still necessary for real searches.
+
+## PubMed public API
+
+Select **PubMed** in Scholarly sources or send `"pubmed"` in the API's `sources` array. The adapter calls NCBI ESearch (up to 25 PMIDs) followed by one batched EFetch request. It supports publication-date bounds and the available article/preprint/book-chapter filters, then verifies year/type metadata locally. Records include PMID provenance, DOI when supplied, author/collective names, journal/book, publication year, and structured abstracts. XML DTDs are not fetched and external entities are never resolved.
+
+No API key is needed for this low-volume workflow. The application paces all its PubMed requests below three per second; other applications sharing the same outbound IP can still consume NCBI's allowance. Set `RESEARCH_CONTACT_EMAIL` to identify your application to NCBI. Upstream errors and rate limits are saved as source warnings, not retried in a tight loop. PMC IDs provide full-text repository links when available; a link does not establish reuse/licensing rights or guarantee present availability.
+
+## Google Scholar through your own backend
+
+Select **Google Scholar (best effort)** or send `"scholar"` in `sources`. Your existing project search endpoint is the search API: the backend fetches the first public Scholar results page directly and parses it with jsoup. No paid or third-party search API is used. This is an adapter to Google's index, not an independently built replacement for that index.
+
+**No scraper or custom API can guarantee that Google will not block it.** This adapter makes at most one Scholar request per ten seconds across this application, follows no CAPTCHA/access-denial bypass flow, does not rotate proxies, and does not retry blocks. CAPTCHA, consent, HTTP 403/429, unfamiliar markup, and network failures are visible source warnings. The UI includes an **Open Scholar manually** link using the current query/year bounds; manual access is also subject to Google's controls. Scholar is opt-in and does not prevent results from other sources being saved.
+
+Scholar returns only metadata present in the public results: title, displayed author names, venue/year when extractable, record link, DOI for explicit DOI links, and source/search provenance. Snippets are not presented as abstracts; publication type and open-access status remain unknown. Type filtering is declined with a warning instead of guessing a classification. Year-bounded searches omit records with unknown/out-of-range years and report that omission. Page markup can change, so only fixture parsing and application behavior have been verified in this network-restricted environment, not current live HTML compatibility.
+
+Example using your own API:
+
+```http
+POST /api/research/projects/{id}/searches
+Content-Type: application/json
+
+{"query":"heat health","fromYear":2020,"toYear":2025,"publicationType":null,"sources":["pubmed","scholar"]}
+```
+
+`research.pubmed-url` and `research.scholar-url` are server-only endpoint overrides for deterministic local tests; clients cannot set them through the API. Production defaults use the official NCBI and public Google Scholar hosts. PubMed and Scholar need network-domain additions applied in environment settings before live use. Saving a draft does not apply those settings. These changes do not promise uninterrupted upstream availability.
 
 ## Reports
 
@@ -64,10 +89,10 @@ BibTeX uses stable paper-based citation keys, UTF-8 metadata, and escaped LaTeX 
 - `GET /api/research/projects`: project summaries.
 - `POST /api/research/projects`: `{ "name": "…", "question": "…" }`.
 - `GET /api/research/projects/{id}`: papers and search history.
-- `POST /api/research/projects/{id}/searches`: `{ "query": "heat health", "fromYear": 2020, "toYear": 2025, "publicationType": "article", "sources": ["openalex", "crossref"] }`. Year/type fields may be null; types are `article`, `preprint`, and `book-chapter`.
+- `POST /api/research/projects/{id}/searches`: `{ "query": "heat health", "fromYear": 2020, "toYear": 2025, "publicationType": "article", "sources": ["openalex", "crossref", "pubmed"] }`. Year/type fields may be null; types are `article`, `preprint`, and `book-chapter`.
 - `PATCH /api/research/projects/{id}/papers/{paperId}`: `{ "decision": "INCLUDED", "reason": "Relevant population", "notes": "Review methods" }`.
 - `GET /api/research/projects/{id}/export.csv` or `/export.bib`: all papers; append `?decision=INCLUDED` for included papers.
 
 ## Validation
 
-From `backend`: `bash gradlew test bootJar`. From `frontend`: `npm run build` and `npm run lint`. Research integration tests use actual local HTTP source fixtures and SQL storage to exercise deduplication, metadata normalization, filters, source failures, project isolation, screening persistence, and scoped exports. Existing crawler tests remain in the suite.
+From `backend`: `bash gradlew test bootJar`. From `frontend`: `npm run build` and `npm run lint`. Research integration tests use actual local HTTP source fixtures and SQL storage to exercise PubMed JSON/XML, Scholar HTML/block handling, request pacing, deduplication, metadata normalization, filters, source failures, project isolation, screening persistence, and scoped exports. Existing crawler tests remain in the suite.

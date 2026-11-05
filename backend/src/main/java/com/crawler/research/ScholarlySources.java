@@ -11,37 +11,29 @@ import java.net.http.*;
 import java.nio.charset.StandardCharsets;
 import java.time.*;
 import java.util.*;
-import java.util.stream.StreamSupport;
+
 import static com.crawler.research.ResearchModels.*;
 
 @Component
 public class ScholarlySources {
     private final ObjectMapper mapper;
     private final HttpClient client;
+    private final PubMedSource pubmed;
+    private final GoogleScholarSource scholar;
     private final String openalexUrl, crossrefUrl, apiKey, email;
     public ScholarlySources(ObjectMapper mapper,
             @Value("${research.openalex-url:https://api.openalex.org/works}") String openalexUrl,
             @Value("${research.crossref-url:https://api.crossref.org/works}") String crossrefUrl,
             @Value("${research.openalex-api-key:}") String apiKey,
-            @Value("${research.contact-email:}") String email) {
+            @Value("${research.contact-email:}") String email, PubMedSource pubmed, GoogleScholarSource scholar) {
+        this.pubmed=pubmed;this.scholar=scholar;
         this.mapper=mapper; this.openalexUrl=openalexUrl; this.crossrefUrl=crossrefUrl; this.apiKey=apiKey; this.email=email;
-        HttpClient.Builder builder=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10));
-        // Java HttpClient does not read HTTPS_PROXY automatically. Local fixture endpoints bypass it.
-        String proxy=System.getenv("HTTPS_PROXY");
-        if (proxy != null && !proxy.isBlank()) {
-            URI uri=URI.create(proxy);
-            ProxySelector fallback=ProxySelector.of(new InetSocketAddress(uri.getHost(), uri.getPort() < 0 ? 80 : uri.getPort()));
-            builder.proxy(new ProxySelector() {
-                public List<Proxy> select(URI target) {
-                    if (Set.of("localhost", "127.0.0.1", "::1").contains(target.getHost())) return List.of(Proxy.NO_PROXY);
-                    return fallback.select(target);
-                }
-                public void connectFailed(URI uri, SocketAddress address, IOException error) {}
-            });
-        }
-        this.client=builder.build();
+        this.client=ScholarlyHttp.client();
     }
+
     public SourceResult search(String source, SearchRequest request, String searchId, Instant retrievedAt) {
+        if (source.equals("scholar")) return scholar.search(request, searchId, retrievedAt);
+        if (source.equals("pubmed")) return pubmed.search(request, searchId, retrievedAt);
         try {
             URI uri=URI.create(source.equals("openalex") ? openalexQuery(request) : crossrefQuery(request));
             HttpRequest http=HttpRequest.newBuilder(uri).timeout(Duration.ofSeconds(20))

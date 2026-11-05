@@ -13,7 +13,7 @@ public final class ResearchModels {
                                 @Min(1600) @Max(2200) Integer fromYear,
                                 @Min(1600) @Max(2200) Integer toYear,
                                 @Pattern(regexp="article|preprint|book-chapter") String publicationType,
-                                @NotEmpty @Size(max=2) List<@NotBlank @Pattern(regexp="openalex|crossref") String> sources) {}
+                                @NotEmpty @Size(max=4) List<@NotBlank @Pattern(regexp="openalex|crossref|pubmed|scholar") String> sources) {}
     public record ScreeningRequest(@NotNull Decision decision,
                                    @Size(max=2000) String reason,
                                    @Size(max=10000) String notes) {}

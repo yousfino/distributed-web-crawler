@@ -44,8 +44,22 @@ class ResearchWorkflowTest {
             byte[] body=CROSSREF.getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(crossrefStatus,body.length);exchange.getResponseBody().write(body);exchange.close();
         });
+        server.createContext("/pubmed/esearch.fcgi",exchange->{
+            byte[] body="{\"esearchresult\":{\"idlist\":[\"12345\",\"32100\",\"54321\"]}}".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200,body.length);exchange.getResponseBody().write(body);exchange.close();
+        });
+        server.createContext("/pubmed/efetch.fcgi",exchange->{
+            byte[] body=fixture("pubmed.xml").getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200,body.length);exchange.getResponseBody().write(body);exchange.close();
+        });
+        server.createContext("/scholar",exchange->{
+            byte[] body=fixture("scholar.html").getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200,body.length);exchange.getResponseBody().write(body);exchange.close();
+        });
         server.start();
         registry.add("research.openalex-url",()->"http://127.0.0.1:"+server.getAddress().getPort()+"/openalex");
+        registry.add("research.pubmed-url",()->"http://127.0.0.1:"+server.getAddress().getPort()+"/pubmed");
+        registry.add("research.scholar-url",()->"http://127.0.0.1:"+server.getAddress().getPort()+"/scholar");
         registry.add("research.crossref-url",()->"http://127.0.0.1:"+server.getAddress().getPort()+"/crossref");
     }
     @AfterAll static void shutdown(){server.stop(0);}
@@ -121,6 +135,25 @@ class ResearchWorkflowTest {
                 .content("{\"query\":\"health\",\"sources\":[\"unknown\"]}" )).andExpect(status().isBadRequest());
         assertTrue(repository.get(other).papers().isEmpty());
     }
+    @Test void newSourcesUseProjectSearchScreeningAndExportWorkflow() throws Exception {
+        String id=project();
+        mvc.perform(post("/api/research/projects/"+id+"/searches").contentType("application/json")
+                .content("{\"query\":\"health\",\"sources\":[\"pubmed\",\"crossref\",\"scholar\"]}"))
+                .andExpect(status().isOk());
+        Project p=repository.get(id);assertEquals(5,p.papers().size());
+        Paper merged=p.papers().stream().filter(a->a.doi().equals("10.1234/test")).findFirst().orElseThrow();
+        assertEquals(3,merged.provenance().size());
+        assertTrue(merged.abstractText().startsWith("BACKGROUND:"));
+        service.screen(id,merged.id(),new ScreeningRequest(Decision.INCLUDED,"Relevant","Compare methodology"));
+        Project repeated=service.search(id,new SearchRequest("health",null,null,null,List.of("pubmed","crossref")));
+        assertEquals(5,repeated.papers().size());
+        Paper stored=repository.get(id).papers().stream().filter(a->a.id().equals(merged.id())).findFirst().orElseThrow();
+        assertEquals(Decision.INCLUDED,stored.decision());assertEquals("Compare methodology",stored.notes());
+        String csv=service.csv(id,Decision.INCLUDED);assertTrue(csv.contains("pubmed"));assertTrue(csv.contains("scholar"));
+        assertTrue(csv.contains("https://pubmed.ncbi.nlm.nih.gov/12345/"));
+        assertTrue(service.bibtex(id,Decision.INCLUDED).contains("10.1234/test"));
+    }
+
     @Test void deduplicationDoesNotMergeDifferentDoisOrDifferentYears() {
         Paper a=paper("10.1/a",2023),b=paper("10.1/b",2023),c=paper("",2023),d=paper("",2022);
         assertFalse(ResearchService.samePaper(a,b));assertTrue(ResearchService.samePaper(a,c));assertFalse(ResearchService.samePaper(a,d));

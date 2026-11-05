@@ -25,7 +25,7 @@ function SafeLink({ url, children }: { url: string; children: React.ReactNode })
   return <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-teal-300 hover:underline">{children}<ExternalLink size={13} /></a>;
 }
 
-function PaperReview({ paper, save }: { paper: Paper; save: (paperId: string, decision: Decision, reason: string, notes: string) => Promise<void> }) {
+function PaperReview({ paper, save, inspect }: { paper: Paper; inspect?: (url: string, title: string) => void; save: (paperId: string, decision: Decision, reason: string, notes: string) => Promise<void> }) {
   const [decision, setDecision] = useState(paper.decision);
   const [reason, setReason] = useState(paper.reason);
   const [notes, setNotes] = useState(paper.notes);
@@ -34,6 +34,7 @@ function PaperReview({ paper, save }: { paper: Paper; save: (paperId: string, de
   const [error, setError] = useState('');
   return <div className="grid gap-6 border-t border-slate-800 bg-slate-950/60 p-5 lg:grid-cols-2">
     <div className="space-y-4 text-sm">
+      {inspect && /^https?:\/\//i.test(paper.url) && <button type="button" className={secondary} onClick={() => inspect(paper.url, paper.title)}>Find linked materials</button>}
       <div className="flex flex-wrap gap-4"><SafeLink url={paper.url}>Publisher / record</SafeLink><SafeLink url={paper.openAccessUrl}>Open-access full text</SafeLink></div>
       <p className="text-xs text-slate-400">DOI: {paper.doi || 'Not supplied'} · Type: {paper.publicationType || 'Not supplied'}</p>
       <div><h4 className="mb-2 font-semibold">Abstract</h4><p className="whitespace-pre-line leading-relaxed text-slate-300">{paper.abstractText || 'This source did not supply an abstract. Open the source record to review the paper.'}</p></div>
@@ -64,7 +65,7 @@ function PaperReview({ paper, save }: { paper: Paper; save: (paperId: string, de
   </div>;
 }
 
-export function ResearchLibrary() {
+export function ResearchLibrary({ onInspectMaterials }: { onInspectMaterials?: (url: string, title: string) => void }) {
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [project, setProject] = useState<ResearchProject | null>(null);
   const [loading, setLoading] = useState(true);
@@ -77,7 +78,7 @@ export function ResearchLibrary() {
   const [fromYear, setFromYear] = useState('');
   const [toYear, setToYear] = useState('');
   const [publicationType, setPublicationType] = useState('');
-  const [sources, setSources] = useState(['openalex', 'crossref']);
+  const [sources, setSources] = useState(['openalex', 'crossref', 'pubmed']);
   const [filter, setFilter] = useState<Decision | ''>('');
   const [textFilter, setTextFilter] = useState('');
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -185,6 +186,7 @@ export function ResearchLibrary() {
         </section>
         <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
           <h2 className="mb-4 flex items-center gap-2 font-semibold"><Search size={18} className="text-teal-300" />Discover literature</h2>
+          <p className="mb-4 text-xs leading-relaxed text-slate-400">Google Scholar uses this application's own adapter, without a third-party search API. Access can be blocked; it is never guaranteed. <SafeLink url={`https://scholar.google.com/scholar?hl=en&q=${encodeURIComponent(query)}${fromYear ? `&as_ylo=${encodeURIComponent(fromYear)}` : ''}${toYear ? `&as_yhi=${encodeURIComponent(toYear)}` : ''}`}>Open Scholar manually</SafeLink></p>
           <form onSubmit={search} className="space-y-4">
             <div className="flex flex-col gap-3 sm:flex-row"><label className="flex-1"><span className="sr-only">Search terms</span><input className={input} required maxLength={500} value={query} onChange={e => setQuery(e.target.value)} placeholder="Search a topic, paper title, or DOI…" /></label><button className={primary} disabled={busy || !query.trim() || !sources.length}>{busy ? <LoaderCircle size={16} className="animate-spin" /> : <Search size={16} />}{busy ? 'Searching…' : 'Search papers'}</button></div>
             <div className="grid gap-3 sm:grid-cols-3">
@@ -192,10 +194,10 @@ export function ResearchLibrary() {
               <label className="text-xs text-slate-400">To year<input type="number" min="1600" max="2200" className={`${input} mt-1`} placeholder="Any year" value={toYear} onChange={e => setToYear(e.target.value)} /></label>
               <label className="text-xs text-slate-400">Publication type<select aria-label="Publication type" className={`${input} mt-1`} value={publicationType} onChange={e => setPublicationType(e.target.value)}><option value="">Any type</option><option value="article">Article</option><option value="preprint">Preprint</option><option value="book-chapter">Book chapter</option></select></label>
             </div>
-            <fieldset className="flex flex-wrap items-center gap-4 text-sm"><legend className="mb-2 text-xs text-slate-400">Scholarly sources</legend>{['openalex', 'crossref'].map(source => <label key={source} className="flex items-center gap-2"><input type="checkbox" checked={sources.includes(source)} onChange={e => setSources(previous => e.target.checked ? [...previous, source] : previous.filter(s => s !== source))} />{source === 'openalex' ? 'OpenAlex' : 'Crossref'}</label>)}</fieldset>
-            <p className="text-xs text-slate-500">Up to 25 records per source per search. Results are deduplicated; this is a discovery aid, not an exhaustive systematic search.</p>
+            <fieldset className="flex flex-wrap items-center gap-4 text-sm"><legend className="mb-2 text-xs text-slate-400">Scholarly sources</legend>{['openalex', 'crossref', 'pubmed', 'scholar'].map(source => <label key={source} className="flex items-center gap-2"><input type="checkbox" checked={sources.includes(source)} onChange={e => setSources(previous => e.target.checked ? [...previous, source] : previous.filter(s => s !== source))} />{{ openalex: 'OpenAlex', crossref: 'Crossref', pubmed: 'PubMed', scholar: 'Google Scholar (best effort)' }[source]}</label>)}</fieldset>
+            <p className="text-xs text-slate-500">Up to 25 records per API source; up to 10 for Google Scholar. Results are deduplicated; this is a discovery aid, not an exhaustive systematic search.</p>
           </form>
-          {busy && <p role="status" className="mt-4 text-sm text-teal-300">Retrieving source records. This may take up to 45 seconds.</p>}
+          {busy && <p role="status" className="mt-4 text-sm text-teal-300">Retrieving source records. This may take up to two minutes.</p>}
           {searchMessage && <p role="status" className="mt-4 text-sm text-teal-300">{searchMessage}</p>}
           {!!lastSearch?.warnings.length && <div role="alert" className="mt-4 rounded-lg border border-amber-800 bg-amber-950/40 p-3 text-sm text-amber-200"><p className="mb-1 font-semibold">Some sources could not be searched</p>{lastSearch.warnings.map(w => <p key={w}>{w}</p>)}<p className="mt-2 text-xs">Available results are saved. Retry the search after access is restored.</p></div>}
         </section>
@@ -211,7 +213,7 @@ export function ResearchLibrary() {
               <div className="min-w-0 flex-1"><h3 className="font-medium leading-relaxed text-slate-100">{p.title}</h3><p className="mt-1 text-sm text-slate-400">{p.authors.join('; ') || 'Authors not supplied'}</p><p className="mt-2 text-xs text-slate-500">{p.year ?? 'Year unknown'} · {p.venue || 'Venue not supplied'}{p.openAccessUrl ? ' · Open access available' : ''}</p></div>
               <span className={`shrink-0 rounded-full px-2 py-1 text-xs ${badge[p.decision]}`}>{decisionLabel[p.decision]}</span>
             </button>
-            {expanded === p.id && <PaperReview paper={p} save={saveScreening} />}
+            {expanded === p.id && <PaperReview paper={p} save={saveScreening} inspect={onInspectMaterials} />}
           </article>)}</div>
           {!visible.length && <div className="p-10 text-center text-sm text-slate-400">{papers.length ? 'No papers match these filters.' : 'No papers collected yet. Search scholarly sources to begin.'}</div>}
         </section>
