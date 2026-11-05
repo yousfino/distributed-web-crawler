@@ -7,9 +7,9 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 
-final class ScholarlyHttp {
+public final class ScholarlyHttp {
     private ScholarlyHttp() {}
-    static HttpClient client() {
+    public static HttpClient client() {
         HttpClient.Builder builder=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10));
         String proxy=System.getenv("HTTPS_PROXY");
         if(proxy!=null && !proxy.isBlank()) {

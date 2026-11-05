@@ -25,7 +25,7 @@ function SafeLink({ url, children }: { url: string; children: React.ReactNode })
   return <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-teal-300 hover:underline">{children}<ExternalLink size={13} /></a>;
 }
 
-function PaperReview({ paper, save }: { paper: Paper; save: (paperId: string, decision: Decision, reason: string, notes: string) => Promise<void> }) {
+function PaperReview({ paper, save, inspect }: { paper: Paper; inspect?: (url: string, title: string) => void; save: (paperId: string, decision: Decision, reason: string, notes: string) => Promise<void> }) {
   const [decision, setDecision] = useState(paper.decision);
   const [reason, setReason] = useState(paper.reason);
   const [notes, setNotes] = useState(paper.notes);
@@ -34,6 +34,7 @@ function PaperReview({ paper, save }: { paper: Paper; save: (paperId: string, de
   const [error, setError] = useState('');
   return <div className="grid gap-6 border-t border-slate-800 bg-slate-950/60 p-5 lg:grid-cols-2">
     <div className="space-y-4 text-sm">
+      {inspect && /^https?:\/\//i.test(paper.url) && <button type="button" className={secondary} onClick={() => inspect(paper.url, paper.title)}>Find linked materials</button>}
       <div className="flex flex-wrap gap-4"><SafeLink url={paper.url}>Publisher / record</SafeLink><SafeLink url={paper.openAccessUrl}>Open-access full text</SafeLink></div>
       <p className="text-xs text-slate-400">DOI: {paper.doi || 'Not supplied'} · Type: {paper.publicationType || 'Not supplied'}</p>
       <div><h4 className="mb-2 font-semibold">Abstract</h4><p className="whitespace-pre-line leading-relaxed text-slate-300">{paper.abstractText || 'This source did not supply an abstract. Open the source record to review the paper.'}</p></div>
@@ -64,7 +65,7 @@ function PaperReview({ paper, save }: { paper: Paper; save: (paperId: string, de
   </div>;
 }
 
-export function ResearchLibrary() {
+export function ResearchLibrary({ onInspectMaterials }: { onInspectMaterials?: (url: string, title: string) => void }) {
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [project, setProject] = useState<ResearchProject | null>(null);
   const [loading, setLoading] = useState(true);
@@ -212,7 +213,7 @@ export function ResearchLibrary() {
               <div className="min-w-0 flex-1"><h3 className="font-medium leading-relaxed text-slate-100">{p.title}</h3><p className="mt-1 text-sm text-slate-400">{p.authors.join('; ') || 'Authors not supplied'}</p><p className="mt-2 text-xs text-slate-500">{p.year ?? 'Year unknown'} · {p.venue || 'Venue not supplied'}{p.openAccessUrl ? ' · Open access available' : ''}</p></div>
               <span className={`shrink-0 rounded-full px-2 py-1 text-xs ${badge[p.decision]}`}>{decisionLabel[p.decision]}</span>
             </button>
-            {expanded === p.id && <PaperReview paper={p} save={saveScreening} />}
+            {expanded === p.id && <PaperReview paper={p} save={saveScreening} inspect={onInspectMaterials} />}
           </article>)}</div>
           {!visible.length && <div className="p-10 text-center text-sm text-slate-400">{papers.length ? 'No papers match these filters.' : 'No papers collected yet. Search scholarly sources to begin.'}</div>}
         </section>
